@@ -1,0 +1,13 @@
+name: !join ["拷", "贝", "漫", "画"]
+origin: !join &origin ["https", "://copym", "anga", ".net"]
+action:
+  search:
+    url: !join [*origin, "/search?q={keyword}"]
+    js_init: "return _0_search_init({page_num})"
+    js_result: "return _0_search_result({page_num})"
+  comic:
+    js_init: "return _0_comic_init()"
+    js_result: "return _0_comic_result()"
+  chapter:
+    js_init: "return _0_chapter_init()"
+    js_result: "return _0_chapter_result()"

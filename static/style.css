@@ -1,0 +1,121 @@
+body {
+  padding: 10px;
+}
+.index-form {
+  margin-bottom: 50px;
+}
+.index-form input {
+  margin: 0 5px 12px 0;
+}
+.nav {
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+a,
+button {
+  display: inline-block;
+  height: 38px;
+  box-sizing: border-box;
+  margin: 0;
+  line-height: 36px;
+  text-align: center;
+  text-decoration: none;
+  padding: 0 18px;
+  font-size: 14px;
+  color: #fff;
+  background: #498ff2;
+  border: 1px solid transparent;
+}
+
+input {
+  padding: 0 8px;
+  height: 36px;
+  line-height: 36px;
+  box-shadow: 0 1px 4px #6666660f;
+  border: 1px solid transparent;
+  outline: 1px solid #eee;
+  font-size: 16px;
+  flex: 1;
+}
+
+fieldset {
+  border-width: 1px;
+  border-color: #eee;
+}
+
+.search-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+.search-item {
+  position: relative;
+  text-align: center;
+  flex: 0 0 50%;
+  font-size: 14px;
+  line-height: 1.5em;
+  margin-bottom: 10px;
+}
+.search-item img {
+  width: 90%;
+  object-fit: contain;
+}
+.search-item .author {
+  font-size: 12px;
+}
+.page-info {
+  margin: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chapter-info .title {
+  font-size: 26px;
+  line-height: 1.5;
+}
+.chapter-info img {
+  display: block;
+  width: 70%;
+  margin: 20px auto;
+  object-fit: contain;
+}
+.chapter-hint {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #999;
+  justify-content: space-between;
+}
+.chapter-list {
+  margin: 5px 0;
+}
+.chapter-item {
+  display: inline-block;
+  padding: 4px 8px;
+  border: 2px solid #ddd;
+  margin: 5px;
+  color: #666;
+}
+.chapter-item.select {
+  border-color: #498ff2;
+  color: #498ff2;
+}
+.chapter-item.disable {
+  border-color: #999;
+  background-color: #999;
+  color: #666;
+}
+#ignore_index {
+  display: inline-block;
+  max-width: 50px;
+  margin-left: 10px;
+}
+.subscribe-row {
+  text-align: center;
+  margin: 20px 0;
+}
+#subscribe {
+  width: 50%;
+}

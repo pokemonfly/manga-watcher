@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no,width=device-width,height=device-height"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no,email=no,adress=no" />
+    <script src={{ url_for("static", filename="js/jquery.min.js") }}></script>
+    <link type="text/css" rel="stylesheet" href={{ url_for("static", filename="style.css") }}></link>
+  </head>
+  <body>
+    <div id="main"></div>
+    <script>
+      try {
+        window.injectData = JSON.parse(`{{ data|safe }}`);
+      } catch (e) {
+        $("#main").html(`{{ data|safe }}`);
+        window.injectData = null;
+      }
+    </script>
+    <script src={{ url_for("static", filename="js/base.js") }}></script>
+    {% block content %} 
+    {% endblock %}
+  </body>
+</html>

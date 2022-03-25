@@ -1,0 +1,6 @@
+__pycache__
+.vscode
+cache
+data.db
+err.log
+test.py
