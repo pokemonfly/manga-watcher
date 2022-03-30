@@ -107,6 +107,11 @@ window._0_chapter_init = function () {
   if (!$) return false;
   window._img_ = window._img_ || { loaded: 0 };
   let count = +$(".comicCount").text();
+  let index = +$(".comicIndex").text();
+  if (index > count) {
+    // 页面bug 偶尔显示成0
+    count = index
+  }
   let loaded = $(".comicContent-list > li").length;
   let arr = $(".lazyload");
   clearTimeout(window._t || 0);
@@ -140,6 +145,9 @@ window._0_chapter_init = function () {
   return window._img_.loaded == count;
 };
 window._0_chapter_result = function () {
+  if(window._img_.loaded == 0) {
+    return []
+  }
   return $(".comicContent-list img").map(function (id) {
     return {
       id,

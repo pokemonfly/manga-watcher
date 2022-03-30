@@ -20,7 +20,7 @@ create table chapter (
   chapter_id int,
   chapter_title text,
   chapter_url text,
-  --  0:不处理 1:待处理 2:已完成 3:已删除 
+  --  0:未处理 1:待处理 2:已完成 3:已删除 
   sync_state int,
   page_count int,
   -- 最后访问时间

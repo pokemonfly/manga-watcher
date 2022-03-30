@@ -6,11 +6,18 @@ from loguru import logger
 DB_FILE = 'data.db'
 
 
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+
 class DBHelper():
     def __init__(self):
-        if self.checkDB():
+        if self.check_db():
             self.conn = sqlite3.connect(DB_FILE)
-        self.conn.row_factory = sqlite3.Row
+        self.conn.row_factory = dict_factory
 
     def __enter__(self):
         return self
@@ -18,7 +25,7 @@ class DBHelper():
     def __exit__(self, *_):
         self.close()
 
-    def checkDB(self):
+    def check_db(self):
         if path.exists(DB_FILE) is False:
             self.conn = sqlite3.connect(DB_FILE)
             # init db
@@ -32,13 +39,21 @@ class DBHelper():
     def close(self):
         self.conn.close()
 
+    def query_by_id(self, table, id):
+        sql = f"""
+            select * from {table} 
+            where id = {id};
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
     def update_by_id(self, table, id, **dict):
         keys = dict.keys()
         sql = f"""
             update {table} set {', '.join([ k + '=?' for k in keys])}
             where id = {id};
         """
-        logger.info(sql)
         cursor = self.conn.cursor()
         cursor.execute(sql, [dict[k] for k in keys])
         self.conn.commit()
@@ -48,7 +63,6 @@ class DBHelper():
             delete from {table} 
             where id = {id};
         """
-        logger.info(sql)
         cursor = self.conn.cursor()
         cursor.execute(sql)
         self.conn.commit()
@@ -58,7 +72,6 @@ class DBHelper():
 			insert into comic ({','.join(dict.keys())})
 			values ( { ','.join([f"{v!r}" for v in dict.values()]) } );
         """
-        logger.info(sql)
         cursor = self.conn.cursor()
         cursor.execute(sql)
         return cursor.lastrowid
@@ -69,7 +82,6 @@ class DBHelper():
             insert into chapter ({','.join(keys)}) 
             values ({','.join( ["?" for _ in keys] )})
         """
-        logger.info(sql)
         cursor = self.conn.cursor()
         cursor.executemany(
             sql, [[i[k] for k in keys] for i in list])
@@ -99,7 +111,6 @@ class DBHelper():
             where comic_id = {id} and sync_state = 1
             and task.id is null
         """
-        logger.info(sql)
         cursor = self.conn.cursor()
         cursor.execute(sql)
         self.conn.commit()
@@ -122,9 +133,18 @@ class DBHelper():
         cursor.execute(sql)
         return cursor.fetchall()
 
+    def query_comic_by_id(self, id):
+        sql = f"""
+            select * from comic
+            where id = {id}
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
     def query_chapter_by_id(self, id):
         sql = f"""
-            select chapter_id, chapter_title from chapter
+            select * from chapter
             where comic_id = {id}
         """
         cursor = self.conn.cursor()

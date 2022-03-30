@@ -1,3 +1,4 @@
+import json
 import schedule
 from threading import Thread
 from flask import Flask, render_template, request, jsonify, g, send_from_directory
@@ -5,8 +6,7 @@ from loguru import logger
 from dbHelper import DBHelper
 from task import Task
 from timingTask import TimingTask
-from utils import TimerCache,  ranstr, save_file, SITE_CONFIG
-import json
+from utils import TimerCache, ranstr, save_file, SITE_CONFIG
 
 app = Flask(__name__)
 task = Task()
@@ -17,12 +17,14 @@ logger.add('err.log', level="ERROR")
 
 @app.route('/image/<path:path>')
 def send_image_file(path):
-    return send_from_directory('cache', path)
+    return send_from_directory('cache', path, mimetype='image/png')
 
 
 @app.route('/')
 def index():
-    return render_template('index.html', data=json.dumps(['a'], ensure_ascii=False))
+    with DBHelper() as db:
+        res = db.query_comic()
+    return render_template('index.html', data=json.dumps(res, ensure_ascii=False))
 
 
 @app.route('/search')
@@ -59,6 +61,22 @@ def preview():
     return render_template('preview.html', data=json.dumps(res, ensure_ascii=False))
 
 
+@app.route('/comic')
+def comic():
+    id = request.args.get('id')
+    with DBHelper() as db:
+        res = db.query_by_id('comic', id)[0]
+        res['chapters'] = db.query_chapter_by_id(res['id'])
+    return render_template('comic.html', data=json.dumps(res, ensure_ascii=False))
+
+@app.route('/chapter')
+def chapter():
+    id = request.args.get('id')
+    with DBHelper() as db:
+        res = db.query_by_id('chapter', id)[0]
+    return render_template('chapter.html', data=json.dumps(res, ensure_ascii=False))
+
+
 @app.route('/sync_now')
 def sync_now():
     def sync():
@@ -91,8 +109,7 @@ def subscribe():
         subscribe_list_str = formdata.get('subscribe_list')
         subscribe_list = []
         if subscribe_list_str is not None:
-            subscribe_list = [int(i)
-                              for i in subscribe_list_str.split(',')]
+            subscribe_list = [int(i) for i in subscribe_list_str.split(',')]
         chapter_list = []
 
         for i in comic['chapters']:
@@ -110,13 +127,33 @@ def subscribe():
     return jsonify({'msg': 'ok', 'result': True})
 
 
+@app.route('/subscribe_chapters', methods=['POST'])
+def subscribe_chapters():
+    formdata = request.form
+    subscribe_list_str = formdata.get('subscribe_list')
+    with DBHelper() as db:
+        for i in subscribe_list_str.split(','):
+            db.update_by_id('chapter',  int(i), sync_state=1)
+        db.sync_task_by_chapter_id(formdata.get('id'))
+    sync_now()
+    return jsonify({'msg': 'ok', 'result': True})
+
+
+@app.route('/unsubscribe', methods=['POST'])
+def unsubscribe():
+    formdata = request.form
+    with DBHelper() as db:
+        db.unsubscribe(formdata.get('id'))
+    return jsonify({'msg': 'ok', 'result': True})
+
+
 class WebServer(Thread):
     def __init__(self):
         super().__init__(daemon=True)
         self.start()
 
     def run(self):
-        app.run(debug=True, use_reloader=False)
+        app.run(host='0.0.0.0', debug=True, use_reloader=False)
 
 
 if __name__ == "__main__":

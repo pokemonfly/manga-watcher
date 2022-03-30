@@ -61,23 +61,27 @@ $(function () {
       });
     });
     $("#subscribe").on("click", function () {
+      let subscribe_list = [
+        ...$(".chapter-item.select").map(function () {
+          return $(this).attr("data-id");
+        }),
+      ];
+      let data = {
+        url: window.injectData.page_url,
+        ignore_index: +$("#ignore_index").val(),
+      };
+      if (subscribe_list.length) {
+        data.subscribe_list = subscribe_list.join(",");
+      }
       $.ajax({
         url: "/subscribe",
         method: "POST",
-        data: {
-          url: window.injectData.page_url,
-          ignore_index: +$("#ignore_index").val(),
-          subscribe_list: [
-            ...$(".chapter-item.select").map(function () {
-              return $(this).attr("data-id");
-            }),
-          ].join(","),
-        },
+        data: data,
       }).done(function (res) {
         if (res.result) {
-          alert("订阅成功");
+          showMsg("订阅成功");
         } else {
-          alert("Error:" + res.msg);
+          showMsg("Error:" + res.msg);
         }
       });
     });

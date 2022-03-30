@@ -1,4 +1,4 @@
-function render() {
+function renderForm() {
   return `
     <div class='index-form'>
       <form action="/comic_preview" method="get">
@@ -22,11 +22,43 @@ function render() {
           </div>
         </fieldset>
       </form>
+
+    </div>
+    <div class='btn-row'>
+      <button id='syncNow'>恢复任务</button>
     </div>
   `;
 }
+
+function renderList(data) {
+  return `<div class='comic-list'>
+    <div class="comic-hint">已订阅章节</div>
+    ${data
+      .map((c) => {
+        return `
+        <div class='comic-item' data-id='${c.id}'>
+          <img src="image/${c.cover}">
+          <div>
+            <div class="title">${c.title}</div>
+            <div class="sub">${c.author}</div>
+            <div class="sub">${c.last_update}</div>
+            <a href='comic?id=${c.id}'>查看详情</a>
+          </div>
+        </div>
+      `;
+      })
+      .join("")}
+  </div>`;
+}
 $(function () {
   if (window.injectData) {
-    $("#main").html(render());
+    $("#main").html([renderForm(), renderList(window.injectData)]);
+    $("#syncNow").on("click", () => {
+      $.ajax({
+        url: "/sync_now",
+      }).done(function (res) {
+        showMsg("操作成功");
+      });
+    });
   }
 });
