@@ -40,8 +40,8 @@ function renderList(data) {
           <img src="image/${c.cover}">
           <div>
             <div class="title">${c.title}</div>
-            <div class="sub">${c.author}</div>
-            <div class="sub">${c.last_update}</div>
+            <div class="sub author">${c.author}</div>
+            <div class="sub last_update">${c.last_update}</div>
             <a href='comic?id=${c.id}'>查看详情</a>
           </div>
         </div>

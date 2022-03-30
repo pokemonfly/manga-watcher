@@ -3,9 +3,9 @@ function renderInfo(data) {
   return `<div class="chapter-info">
     <img src="image/${cover}"/>
     <div class="title">${title}</div>
-    <div class="sub">作者: ${author}</div>
+    <div class="sub author">作者: ${author}</div>
     <div class="sub">源: ${origin}</div>
-    <div class="sub">最近更新: ${last_update}</div>
+    <div class="sub last_update">最近更新: ${last_update}</div>
   </div>`;
 }
 function renderChapter(data) {
@@ -21,7 +21,7 @@ function renderChapter(data) {
           3: "[已删除]",
         }[i.sync_state];
         return `
-        <div class="chapter-item" data-id="${i.id}">
+        <div class="chapter-item" data-id="${i.id}" data-url="chapter?id=${i.id}">
           ${i.chapter_title}${state}
         </div>
       `;

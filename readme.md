@@ -10,9 +10,10 @@ python main.py
 # yealico config
 
 MyWatcher
-http://10.50.5.102:5000/
+https://4164de37.cpolar.cn
 
-http://10.50.5.102:5000/read/{idCode:}
+https://4164de37.cpolar.cn/comic?id={idCode:}
+https://4164de37.cpolar.cn/chapter?id={cidCode:}
 #title
 .comic-item
 
