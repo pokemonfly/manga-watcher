@@ -4,13 +4,13 @@ CREATE TABLE comic (
   id integer primary key,
   title text,
   author text,
-  cover text,
   page_url text,
   -- 网站源
   origin text,
   -- 针对巨长章节 无视掉前面的一部分章节
   ignore_index int,
-  last_update datetime
+  last_update datetime,
+  uid text
 );
 
 create table chapter (

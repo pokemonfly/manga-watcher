@@ -26,3 +26,11 @@ text
 https://pokemonfly.github.io/static-page/index.html?mode=chapter&id={idCode:}
 
 jsNeededAll
+
+window._cache_ = { loaded: 0};
+window.search_init = (page) => {};
+window.search_result = (page) => {};
+window.comic_init = () => {};
+window.comic_result = () => {};
+window.chapter_init = () => {};
+window.chapter_result = () => {};

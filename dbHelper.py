@@ -127,8 +127,18 @@ class DBHelper():
         self.conn.executescript(sql)
         self.conn.commit()
 
-    def query_comic(self):
-        sql = 'select * from comic;'
+    def query_comic(self, uid):
+        sql = f"""
+            select count(chapter.comic_id) as unread, comic.* 
+            from comic
+            left join chapter
+            on chapter.comic_id = comic.id
+                and chapter.sync_state=2
+                and chapter.last_access is NULL
+            where comic.uid = '{uid}'
+            group by comic.id
+            order by unread desc, comic.last_update desc
+        """
         cursor = self.conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
@@ -150,6 +160,24 @@ class DBHelper():
         cursor = self.conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
+
+    def query_old_chapter(self):
+        sql = """
+            select * from chapter 
+            where sync_state=2 and last_access < date('now', '-30 days');
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def after_delete_old_chapter(self):
+        sql = f"""
+            update chapter set sync_state=3
+            where sync_state=2 and last_access < date('now', '-30 days');
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(sql)
+        self.conn.commit()
 
     def query_task(self):
         sql = """

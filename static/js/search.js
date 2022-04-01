@@ -1,6 +1,6 @@
 function render(data) {
-  const { page_num, page_all, page_size, list } = data;
-  let page_limit = Math.round(page_all / page_size);
+  const { page_num, page_count, list } = data;
+  let page_limit = page_count;
   let usp = new URLSearchParams(location.search);
   usp.set("page_num", page_num + 1);
   let page_info = `<div class="page-info">

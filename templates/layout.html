@@ -14,10 +14,11 @@
   <body>
     <div id="main"></div>
     <script>
+      let injectStr = `{{ data|safe }}`
       try {
-        window.injectData = JSON.parse(`{{ data|safe }}`);
+        window.injectData = JSON.parse(injectStr);
       } catch (e) {
-        $("#main").html(`{{ data|safe }}`);
+        $("#main").html(injectStr);
         window.injectData = null;
       }
     </script>

@@ -1,11 +1,12 @@
 from functools import partial
+import re
 from loguru import logger
 import schedule
 from threading import Thread, Lock
 from dbHelper import DBHelper
 from task import Task
 from utils import SITE_CONFIG, save_file
-
+import shutil
 logger.add('err.log', level="ERROR")
 
 
@@ -16,10 +17,22 @@ class TimingTask(Thread):
         self.sync_chapter_lock = Lock()
         self.start()
         schedule.every(6).hours.do(self.sync_comic)
+        schedule.every(7).days.do(self.del_old_file)
 
     def run(self):
         while True:
             schedule.run_pending()
+
+    def del_old_file(self):
+        with DBHelper() as db:
+            chapter_list = db.query_old_chapter()
+            if len(chapter_list) == 0:
+                return
+            for chapter in chapter_list:
+                shutil.rmtree(
+                    f"cache/{chapter['comic_id']}/{chapter['chapter_id']}", ignore_errors=True)
+            db.after_delete_old_chapter()
+            logger.info('阅读后超过30天的章节已经清理')
 
     def sync_comic(self):
         with self.sync_comic_lock, DBHelper() as db:
@@ -29,10 +42,12 @@ class TimingTask(Thread):
             task = Task()
             task_list = []
             for comic in comic_list:
+                url = comic['page_url']
+                origin = re.findall(r'^https?://[^/]+', url)[0]
                 task_list.append({
-                    "url": comic['page_url'],
-                    "js_init": SITE_CONFIG['action']['comic']['js_init'],
-                    "js_result": SITE_CONFIG['action']['comic']['js_result'],
+                    "url": url,
+                    "js_init": SITE_CONFIG[origin]['action']['comic']['js_init'],
+                    "js_result": SITE_CONFIG[origin]['action']['comic']['js_result'],
                     "callback":  partial(self.sync_comic_callback, comic)
                 })
 
@@ -85,10 +100,12 @@ class TimingTask(Thread):
             task = Task()
             task_list = []
             for item in todo_list:
+                url = item['chapter_url']
+                origin = re.findall(r'^https?://[^/]+', url)[0]
                 task_list.append({
-                    "url": item['chapter_url'],
-                    "js_init": SITE_CONFIG['action']['chapter']['js_init'],
-                    "js_result": SITE_CONFIG['action']['chapter']['js_result'],
+                    "url": url,
+                    "js_init": SITE_CONFIG[origin]['action']['chapter']['js_init'],
+                    "js_result": SITE_CONFIG[origin]['action']['chapter']['js_result'],
                     "callback":  partial(self.sync_chapter_callback, item)
                 })
 

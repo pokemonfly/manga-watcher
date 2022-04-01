@@ -1,7 +1,7 @@
 function renderInfo(data) {
-  let { title, author, cover, origin, last_update } = data;
+  let { title, author, id, origin, last_update } = data;
   return `<div class="chapter-info">
-    <img src="image/${cover}"/>
+    <img src="image/cover/${id}.png"/>
     <div class="title">${title}</div>
     <div class="sub author">作者: ${author}</div>
     <div class="sub">源: ${origin}</div>

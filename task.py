@@ -9,13 +9,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from loguru import logger
 import schedule
+from utils import ResultStore, INJECT_CONFIG
+import re
 
-from utils import ResultStore
 logger.add('err.log', level="ERROR")
 
 THREAD_LIMIT = 3
-with open('inject.js', "r") as jsFile:
-    injectJs = jsFile.read()
 
 
 class Worker(Thread):
@@ -31,9 +30,13 @@ class Worker(Thread):
 
     def do_task(self, task):
         try:
-            self.driver.get(task['url'])
-            self.log(f"open {task['url']}")
-            self.driver.execute_script(injectJs)
+            url = task['url']
+            self.log(f"open {url}")
+            self.driver.get(url)
+            self.driver.execute_script(INJECT_CONFIG['common'])
+            origin = re.findall(r'^https?://[^/]+', url)[0]
+            self.driver.execute_script(INJECT_CONFIG[origin])
+
             if 'js_init' in task:
                 WebDriverWait(self.driver, 500, poll_frequency=3).until(
                     lambda _: self.driver.execute_script(task['js_init']))

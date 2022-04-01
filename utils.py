@@ -8,6 +8,7 @@ import base64
 from threading import Lock
 import socket
 
+
 def get_host_ip():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -27,7 +28,16 @@ def join(loader, node):
 yaml.add_constructor('!join', join)
 
 with open('config/site.yaml') as file:
-    SITE_CONFIG = yaml.load(file,  Loader=yaml.Loader)
+    SITE_CONFIG = {}
+    INJECT_CONFIG = {}
+    with open('config/common.js', "r") as jsFile:
+        INJECT_CONFIG['common'] = jsFile.read()
+    rules = yaml.load(file,  Loader=yaml.Loader)
+    for site in rules['site']:
+        SITE_CONFIG[site['origin']] = site
+        with open(f"config/{site['inject']}", "r") as jsFile:
+            INJECT_CONFIG[site['origin']] = jsFile.read()
+    
 
 
 def save_file(path, img_string):

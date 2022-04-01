@@ -1,44 +1,5 @@
-window.getXpath = function (e) {
-  var i = e;
-  if (i && i.id) return '//*[@id="' + i.id + '"]';
-  for (var n = []; i && Node.ELEMENT_NODE === i.nodeType; ) {
-    for (var r = 0, o = !1, d = i.previousSibling; d; )
-      d.nodeType !== Node.DOCUMENT_TYPE_NODE &&
-        d.nodeName === i.nodeName &&
-        r++,
-        (d = d.previousSibling);
-    for (d = i.nextSibling; d; ) {
-      if (d.nodeName === i.nodeName) {
-        o = !0;
-        break;
-      }
-      d = d.nextSibling;
-    }
-    n.push(
-      (i.prefix ? i.prefix + ":" : "") +
-        i.localName +
-        (r || o ? "[" + (r + 1) + "]" : "")
-    ),
-      (i = i.parentNode);
-  }
-  return n.length ? "/" + n.reverse().join("/") : "";
-};
-
-window.getBase64 = function (src) {
-  return new Promise((res) => {
-    let image = new Image();
-    image.src = src;
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    image.onload = () => {
-      canvas.width = image.width;
-      canvas.height = image.height;
-      context.drawImage(image, 0, 0);
-      res(canvas.toDataURL().replace("data:image/png;base64,", ""));
-    };
-  });
-};
-window._0_search_init = function (page) {
+window._cache_ = { loaded: 0};
+window.search_init = function (page) {
   if (!$) return false;
   page = page || 1;
   setTimeout(function () {
@@ -55,12 +16,13 @@ window._0_search_init = function (page) {
     return false;
   }
 };
-window._0_search_result = function (page) {
+window.search_result = function (page) {
   page = page || 1;
   return {
     page_num: page,
-    page_all: +$(".comicNumAll").html(),
-    page_size: searchData.comic[1].length,
+    page_count: Math.round(
+      +$(".comicNumAll").html() / searchData.comic[1].length
+    ),
     list: searchData.comic[page].map((i) => ({
       cover: i.cover,
       title: i.name,
@@ -69,9 +31,8 @@ window._0_search_result = function (page) {
     })),
   };
 };
-window._0_comic_init = function () {
+window.comic_init = function () {
   if (!$) return false;
-  window._cache_ = window._cache_ || {};
   let src = $("div.container.comicParticulars-title img.lazyloaded").attr(
     "src"
   );
@@ -82,7 +43,7 @@ window._0_comic_init = function () {
   }
   return $("#default全部 a[title]").length > 0 && !!window._cache_.cover;
 };
-window._0_comic_result = function () {
+window.comic_result = function () {
   return {
     title: $("div.container.comicParticulars-title h6[title]").text(),
     author: $(
@@ -103,14 +64,13 @@ window._0_comic_result = function () {
     }),
   };
 };
-window._0_chapter_init = function () {
+window.chapter_init = function () {
   if (!$) return false;
-  window._img_ = window._img_ || { loaded: 0 };
   let count = +$(".comicCount").text();
   let index = +$(".comicIndex").text();
   if (index > count) {
     // 页面bug 偶尔显示成0
-    count = index
+    count = index;
   }
   let loaded = $(".comicContent-list > li").length;
   let arr = $(".lazyload");
@@ -122,36 +82,36 @@ window._0_chapter_init = function () {
       document.documentElement.clientHeight;
     window.scrollTo(0, st < sh ? st + 50 : 0);
     window._t = setTimeout(() => {
-      _0_chapter_init();
+      chapter_init();
     }, 50);
     return false;
   } else if (arr.length) {
     arr[0].scrollIntoView();
     window._t = setTimeout(() => {
-      _0_chapter_init();
+      chapter_init();
     }, 200);
     return false;
   }
   $(".comicContent-list img").each(function () {
-    if (!window._img_[this.src]) {
-      window._img_[this.src] = 1;
+    if (!window._cache_[this.src]) {
+      window._cache_[this.src] = 1;
       getBase64(this.src).then((str) => {
-        window._img_[this.src] = str;
-        window._img_.loaded++;
+        window._cache_[this.src] = str;
+        window._cache_.loaded++;
       });
     }
   });
 
-  return window._img_.loaded == count;
+  return window._cache_.loaded == count;
 };
-window._0_chapter_result = function () {
-  if(window._img_.loaded == 0) {
-    return []
+window.chapter_result = function () {
+  if (window._cache_.loaded == 0) {
+    return [];
   }
   return $(".comicContent-list img").map(function (id) {
     return {
       id,
-      data: window._img_[this.src],
+      data: window._cache_[this.src],
     };
   });
 };
