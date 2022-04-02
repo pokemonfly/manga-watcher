@@ -2,20 +2,21 @@ window._cache_ = { loaded: 0 };
 
 window.search_init = (page) => {
   if (!$) return false;
-  return $("#loading").is(":visible") == false;
+  if (serchArry.length == 0) return true;
+  return $(".itemBox").length > 0;
 };
 window.search_result = (page) => {
   return {
     page_num: page,
-    page_count: +$(".pages .pselected").eq(-2).html(),
-    list: $(".tcaricature_block ul")
+    page_count: 1,
+    list: $(".itemBox")
       .map(function () {
         let $t = $(this);
         let $img = $t.find("img");
         return {
           cover: $img.attr("src"),
-          title: $img.attr("alt"),
-          author: $t.find(".adiv2hidden").eq(0).html().replace("作者:", ""),
+          title: $t.find(".title").html(),
+          author: $t.find(".txtItme").eq(0).text(),
           page_url: $t.find("a").get(0).href,
         };
       })
@@ -23,8 +24,12 @@ window.search_result = (page) => {
   };
 };
 window.comic_init = () => {
+  // 版权ban
+  if (document.body.childNodes.length == 1) return true;
   if (!$) return false;
-  let src = $("div.anim_intro_ptext img").attr("src");
+  sort.asc(jsonData)
+  sort.expand(null,0)
+  let src = $("#Cover img").attr("src");
   if (src) {
     getBase64(src).then((str) => {
       window._cache_.cover = str;
@@ -33,18 +38,19 @@ window.comic_init = () => {
   return !!window._cache_.cover;
 };
 window.comic_result = () => {
+  if (document.body.childNodes.length == 1) return {};
   return {
-    title: $(".anim_title_text h1").text(),
-    author: $(".anim-main_list tr:nth-child(3) a").text(),
+    title: $("#comicName").text(),
+    author: $(".introName").text(),
     cover: window._cache_.cover,
     page_url: location.href,
     origin: location.origin,
-    last_update: $(".update2").html(),
-    chapters: $(".cartoon_online_border li a")
+    last_update: $(".date").text().split(" ")[0],
+    chapters: $(".Drama li a")
       .map(function (id) {
         return {
           chapter_id: id,
-          chapter_title: this.title,
+          chapter_title: $(this).find("span").text(),
           chapter_url: this.href,
         };
       })
@@ -53,10 +59,11 @@ window.comic_result = () => {
 };
 window.chapter_init = () => {
   if (!$) return false;
-  let count = $("#page_select option").length;
-  if (arr_pages && arr_pages.length) {
-    arr_pages.forEach(function (src) {
-      src = `https://images.dmzj.com/${src}`;
+  let $img = $(".comic_img");
+  let count = $img.length;
+  if (count) {
+    $img.map(function () {
+      let src = this.src;
       if (!window._cache_[src]) {
         window._cache_[src] = 1;
         getBase64(src).then((str) => {
@@ -72,11 +79,12 @@ window.chapter_result = () => {
   if (window._cache_.loaded == 0) {
     return [];
   }
-  return arr_pages.map(function (src) {
-    src = `https://images.dmzj.com/${src}`;
-    return {
-      id,
-      data: window._cache_[src],
-    };
-  });
+  return $(".comic_img")
+    .map(function (id) {
+      return {
+        id,
+        data: window._cache_[this.src],
+      };
+    })
+    .toArray();
 };

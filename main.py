@@ -25,15 +25,17 @@ def send_image_file(path):
 
 @app.route('/')
 def index():
-    uid = request.args.get('uid') or 'admin'
+    uid = request.args.get('uid')
+    cuid = request.cookies['uid'] if 'uid' in request.cookies else None
     res = {
         "site": SITE_CONFIG
     }
     with DBHelper() as db:
-        res['list'] = db.query_comic(uid)
+        res['list'] = db.query_comic(uid or cuid or 'admin')
     resp = make_response(render_template(
         'index.html', data=json.dumps(res, ensure_ascii=False)))
-    resp.set_cookie("uid", uid, max_age=30 * 60 * 60 * 24)
+    if (uid is not None):
+        resp.set_cookie("uid", uid, max_age=30 * 60 * 60 * 24)
     return resp
 
 
@@ -61,6 +63,8 @@ def search():
 def preview():
     url = request.args.get('url')
     origin = re.findall(r'^https?://[^/]+', url)[0]
+    if origin not in SITE_CONFIG:
+        return jsonify({'msg': 'URL未支持', 'result': False}) 
     cfg = SITE_CONFIG[origin]['action']['comic']
     res = timerCache.get(url)
     if res is None:

@@ -14,23 +14,13 @@ site:
         js_init: "return chapter_init()"
         js_result: "return chapter_result()"
   - name: !join ["动", "漫", "之", "家"]
-    origin: !join &origin1 ["https", "://manhua.dm", "zj", ".com"]
-    inject: "inject_manhua_dm.js"
+    origin: !join &origin1 ["https", "://m.dm", "zj", ".com"]
+    inject: "inject_m_dm.js"
     action:
       search:
-        url: !join [*origin1, "/tags/search.shtml?s={keyword}&p={page_num}"]
+        url: !join [*origin1, "/search/{keyword}.html"]
         js_init: "return search_init({page_num})"
         js_result: "return search_result({page_num})"
-      comic:
-        js_init: "return comic_init()"
-        js_result: "return comic_result()"
-      chapter:
-        js_init: "return chapter_init()"
-        js_result: "return chapter_result()"
-  - name: !join ["动", "漫", "之", "家"]
-    origin: !join ["https", "://www.dm", "zj", ".com"]
-    inject: "inject_www_dm.js"
-    action:
       comic:
         js_init: "return comic_init()"
         js_result: "return comic_result()"
