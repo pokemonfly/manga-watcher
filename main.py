@@ -34,8 +34,8 @@ def index():
         res['list'] = db.query_comic(uid or cuid or 'admin')
     resp = make_response(render_template(
         'index.html', data=json.dumps(res, ensure_ascii=False)))
-    if (uid is not None):
-        resp.set_cookie("uid", uid, max_age=30 * 60 * 60 * 24)
+    if (cuid is None):
+        resp.set_cookie("uid", uid or 'admin', max_age=30 * 60 * 60 * 24)
     return resp
 
 
@@ -178,7 +178,7 @@ class WebServer(Thread):
         self.start()
 
     def run(self):
-        app.run(host='0.0.0.0', debug=True, use_reloader=False)
+        app.run(host='0.0.0.0', debug=False, use_reloader=False)
 
 
 if __name__ == "__main__":

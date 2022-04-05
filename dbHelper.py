@@ -29,8 +29,8 @@ class DBHelper():
         if path.exists(DB_FILE) is False:
             self.conn = sqlite3.connect(DB_FILE)
             # init db
-            with open('dump.sql', 'r') as sql:
-                self.conn.executescript(sql.read())
+            with open('dump.sql', 'rb') as sql:
+                self.conn.executescript(sql.read().decode('utf-8'))
                 self.conn.commit()
             return False
         else:

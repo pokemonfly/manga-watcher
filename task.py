@@ -14,7 +14,7 @@ import re
 
 logger.add('err.log', level="ERROR")
 
-THREAD_LIMIT = 3
+THREAD_LIMIT = 2
 
 
 class Worker(Thread):
@@ -62,13 +62,14 @@ class Worker(Thread):
 
     def mount(self):
         chrome_options = webdriver.ChromeOptions()
-        # chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--disable-notifications")
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-web-security')  # 允许图片跨域加载
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-software-rasterizer')
+        chrome_options.add_experimental_option("excludeSwitches", ['enable-automation','enable-logging']) #防止打印一些无用的日志
         try:
             self.driver = webdriver.Chrome(service=Service(
                 ChromeDriverManager().install()), chrome_options=chrome_options)

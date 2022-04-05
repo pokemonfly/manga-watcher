@@ -27,7 +27,7 @@ def join(loader, node):
 
 yaml.add_constructor('!join', join)
 
-with open('config/site.yaml') as file:
+with open('config/site.yaml', 'rb') as file:
     SITE_CONFIG = {}
     INJECT_CONFIG = {}
     with open('config/common.js', "r") as jsFile:
