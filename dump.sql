@@ -9,8 +9,7 @@ CREATE TABLE comic (
   origin text,
   -- 针对巨长章节 无视掉前面的一部分章节
   ignore_index int,
-  last_update datetime,
-  uid text
+  last_update datetime
 );
 
 create table chapter (

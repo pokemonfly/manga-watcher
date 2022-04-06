@@ -4,7 +4,7 @@ pip install -r requirements.txt
 
 # 运行
 
-python main.py
+python -X utf8 main.py
 
 
 # yealico config

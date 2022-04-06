@@ -1,4 +1,59 @@
 {% extends "layout.html" %}
 {% block content %}
+<div class='index-form'>
+  <form action="/comic_preview" method="get">
+    <fieldset>
+      <legend>预览URL</legend>
+      <div class="row">
+        <input type="text" name="url" id="url" />
+      </div>
+      <div class="row">
+        <button type="submit">确定</button>
+      </div>
+    </fieldset>
+  </form>
+</div>
+<div class='index-form'>
+  <form action="/search" method="get">
+    <fieldset>
+      <legend>检索</legend>
+      <div class="row">
+        <input type="text" name="keyword" placeholder='关键字' />
+      </div>
+      <div class="row">
+        <select name="origin">
+          {% for site in sitelist %}
+          <option value="{{site['url']}}">{{ site['name']}}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="row">
+        <button type="submit">确定</button>
+      </div>
+    </fieldset>
+  </form>
+</div>
+<div class='btn-row'>
+  <button id='syncNow'>恢复任务</button>
+</div>
+<div class='comic-list'>
+  <div class="comic-hint">已订阅章节</div>
+  {% for item in readlist %}
+  <div class='comic-item' data-id="{{item['id']}}">
+    <img src="image/cover/{{item['id']}}.png">
+    <div>
+      <div class="title">
+        {{item['title']}}
+        {% if item['unread'] > 0 %}
+          <span>[未读: {{item['unread']}}]</span>
+        {% endif %}
+      </div>
+      <div class="sub author">{{item['author']}}</div>
+      <div class="sub last_update">{{item['last_update']}}</div>
+      <a href="{{item['id']}}.html">查看详情</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 <script src={{ url_for("static", filename="js/index.js") }}></script>
 {% endblock %}

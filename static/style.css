@@ -153,8 +153,10 @@ fieldset {
   margin-right: 10px;
 }
 
-.image-list img {
+.image-item {
   margin-top: 10px;
+}
+.image-list img {
   width: 100%;
   object-fit: contain;
 }

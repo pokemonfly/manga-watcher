@@ -127,8 +127,7 @@ class DBHelper():
         self.conn.executescript(sql)
         self.conn.commit()
 
-    def query_comic(self, uid):
-        condition = f"where comic.uid = '{uid}'" if uid is not None else '' 
+    def query_comic(self):
         sql = f"""
             select count(chapter.comic_id) as unread, comic.* 
             from comic
@@ -136,7 +135,6 @@ class DBHelper():
             on chapter.comic_id = comic.id
                 and chapter.sync_state=2
                 and chapter.last_access is NULL
-            {condition}
             group by comic.id
             order by unread desc, comic.last_update desc
         """

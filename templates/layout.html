@@ -10,6 +10,7 @@
     <meta name="format-detection" content="telephone=no,email=no,adress=no" />
     <script src={{ url_for("static", filename="js/jquery.min.js") }}></script>
     <link type="text/css" rel="stylesheet" href={{ url_for("static", filename="style.css") }}></link>
+    <title>{% block title %} {% endblock %}</title>
   </head>
   <body>
     <div id="main"></div>

@@ -1,4 +1,40 @@
 {% extends "layout.html" %}
 {% block content %}
+<div class='nav'>
+  <a href="/">返回首页</a>
+</div>
+<div class="chapter-info">
+  <img src="image/cover/{{comic['id']}}.png"/>
+  <div class="title">{{comic['title']}}</div>
+  <div class="sub author">作者: {{comic['author']}}</div>
+  <div class="sub">源: {{comic['origin']}}</div>
+  <div class="sub last_update">最近更新: {{comic['last_update']}}</div>
+  <input type="hidden" id="id" value="{{comic['id']}}">
+</div>
+<div class="chapter-list">
+  {% for chapter in chapterlist %}
+  <div class="chapter-item" 
+    data-id="{{chapter['id']}}" 
+    data-state="{{chapter['sync_state']}}" 
+    data-url="{{comic['id']}}/{{chapter['id']}}.html">
+    {{chapter['chapter_title']}}
+    {% if chapter['sync_state'] == 1 %}
+      [下载中]
+    {% elif chapter['sync_state'] == 2 %}
+      [{{chapter['page_count']}}页]
+    {% elif chapter['sync_state'] == 3 %}
+      [已删除]
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="subscribe-row">
+  <button id='subscribe'>下载所选章节</button>
+  <button id='unsubscribe'>取消订阅</button>
+</div>
+<div class="subscribe-row">
+  <a href="{{comic['page_url']}}">显示原页面</a>
+</div>
 <script src={{ url_for("static", filename="js/comic.js") }}></script>
 {% endblock %}

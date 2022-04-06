@@ -1,20 +1,18 @@
-function render(data) {
-  let { comic_id, chapter_id, page_count } = data;
-  return `
-  <div class="comic-hint">
-    共<span class="page_count">${page_count}</span>页
-  </div>
-  <div class="image-list">
-    ${[...Array(page_count).keys()].map(
-      (i) => `<div class='image-item'>
-        <img src="image/${comic_id}/${chapter_id}/${i}.png" />
-      </div>
-    `
-    )}
-  </div>`;
-}
 $(function () {
-  if (window.injectData) {
-    $("#main").html([renderNav(), render(window.injectData)]);
-  }
+  $(".image-item").on("click", function () {
+    let $t = $(this);
+    let url = $t.attr("data-src");
+    $t.html(`<img src='${url}'/>`);
+  });
+
+  setTimeout(() => {
+    $(".image-item").eq(0).click();
+    $.ajax({
+      url: "/bookmark",
+      data: {
+        chapter_id: $("#chapter_id").val(),
+        comic_id: $("#comic_id").val(),
+      },
+    });
+  }, 500);
 });

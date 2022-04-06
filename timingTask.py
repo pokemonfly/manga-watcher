@@ -1,5 +1,6 @@
 from functools import partial
 import re
+from flask import render_template
 from loguru import logger
 import schedule
 from threading import Thread, Lock
@@ -7,17 +8,22 @@ from dbHelper import DBHelper
 from task import Task
 from utils import SITE_CONFIG, save_file
 import shutil
+from datetime import datetime
+
 logger.add('err.log', level="ERROR")
 
 
 class TimingTask(Thread):
-    def __init__(self):
+    def __init__(self, flask_app):
         super().__init__(daemon=True)
+        self.app = flask_app
         self.sync_comic_lock = Lock()
         self.sync_chapter_lock = Lock()
+        self.last_sync_time = None
         self.start()
         schedule.every(6).hours.do(self.sync_comic)
         schedule.every(7).days.do(self.del_old_file)
+        self.create_index_html()
 
     def run(self):
         while True:
@@ -89,6 +95,7 @@ class TimingTask(Thread):
                     last_update=comic['last_update']
                 )
                 self.sync_chapter()
+                self.create_comic_html(id)
             else:
                 logger.info(f"[{comic['title']}] 无更新")
 
@@ -128,3 +135,44 @@ class TimingTask(Thread):
                 sync_state=2
             )
             db.delete_by_id('task', info['task_id'])
+        self.create_comic_html(info['comic_id'])
+        self.create_chapter_html(info['chapter_id'], info['comic_id'])
+
+    def create_index_html(self):
+        if self.last_sync_time is None:
+            self.last_sync_time = datetime.now()
+        elif (datetime.now() - self.last_sync_time) .total_seconds() > 300:
+            return schedule.CancelJob
+        sitelist = [{
+            'name': SITE_CONFIG[site]['name'],
+            'url': SITE_CONFIG[site]['origin']
+        } for site in SITE_CONFIG if "search" in SITE_CONFIG[site]["action"]]
+        with DBHelper() as db:
+            readlist = db.query_comic()
+        with self.app.app_context(), self.app.test_request_context():
+            str = render_template(
+                'index.html', sitelist=sitelist, readlist=readlist)
+        with open('cache/index.html', 'w') as f:
+            f.write(str)
+        return schedule.CancelJob
+
+    def create_comic_html(self, id):
+        with DBHelper() as db:
+            comic = db.query_by_id('comic', id)[0]
+            chapterlist = db.query_chapter_by_id(id)
+
+        with self.app.app_context(), self.app.test_request_context():
+            str = render_template('comic.html',
+                                  comic=comic,
+                                  chapterlist=chapterlist)
+        with open(f'cache/{id}.html', 'w') as f:
+            f.write(str)
+
+    def create_chapter_html(self, id, comic_id):
+        with DBHelper() as db:
+            chapter = db.query_by_id('chapter', id)[0]
+
+        with self.app.app_context(), self.app.test_request_context():
+            str = render_template('chapter.html', chapter=chapter)
+        with open(f'cache/{comic_id}/{id}.html', 'w') as f:
+            f.write(str)

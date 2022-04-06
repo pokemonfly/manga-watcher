@@ -1,4 +1,22 @@
 {% extends "layout.html" %}
+{% block title %}
+  {{chapter['chapter_title']}}
+{% endblock %}
 {% block content %}
+<div class='nav'>
+  <a href="/">返回首页</a>
+</div>
+<div class="comic-hint">
+  共<span class="page_count">{{chapter['page_count']}}</span>页
+</div>
+<input type="hidden" id="chapter_id" value="{{chapter['id']}}">
+<input type="hidden" id="comic_id" value="{{chapter['comic_id']}}">
+<div class="image-list">
+  {% for i in range(chapter['page_count']) %}
+  <div class='image-item' data-src="../image/{{chapter['comic_id']}}/{{chapter['chapter_id']}}/{{i}}.png">
+    <button>点击加载图片</button>
+  </div>
+  {% endfor %}
+</div>
 <script src={{ url_for("static", filename="js/chapter.js") }}></script>
 {% endblock %}
