@@ -94,8 +94,8 @@ class TimingTask(Thread):
                     'comic', id,
                     last_update=comic['last_update']
                 )
-                self.sync_chapter()
                 self.create_comic_html(id)
+                self.sync_chapter()
             else:
                 logger.info(f"[{comic['title']}] 无更新")
 
