@@ -7,7 +7,7 @@ function render(data) {
     第${page_num}页, 共${page_limit}页
     ${
       page_num < page_limit
-        ? `<a href="${`/search?${usp.toString()}`}">下一页</a>`
+        ? `<a href="${`/api/search?${usp.toString()}`}">下一页</a>`
         : ""
     }
     </div>`;
@@ -21,7 +21,7 @@ function render(data) {
             <div>
               <div class="title">${item.title}</div>
               <div class="author">${item.author}</div>
-              <a href=${`/comic_preview?url=${encodeURIComponent(
+              <a href=${`/api/comic_preview?url=${encodeURIComponent(
                 item.page_url
               )}`}>预览</a>
             </div>

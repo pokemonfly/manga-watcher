@@ -11,7 +11,7 @@ $(function () {
 
   $("#unsubscribe").on("click", function () {
     $.ajax({
-      url: "/unsubscribe",
+      url: "/api/unsubscribe",
       method: "POST",
       data: {
         id: $("#id").val(),
@@ -38,7 +38,7 @@ $(function () {
       return;
     }
     $.ajax({
-      url: "/subscribe_chapters",
+      url: "/api/subscribe_chapters",
       method: "POST",
       data: {
         id: $("#id").val(),

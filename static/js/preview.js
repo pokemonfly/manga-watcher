@@ -74,7 +74,7 @@ $(function () {
         data.subscribe_list = subscribe_list.join(",");
       }
       $.ajax({
-        url: "/subscribe",
+        url: "/api/subscribe",
         method: "POST",
         data: data,
       }).done(function (res) {

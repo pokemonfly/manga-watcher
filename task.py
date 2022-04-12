@@ -11,10 +11,12 @@ from loguru import logger
 import schedule
 from utils import ResultStore, INJECT_CONFIG
 import re
+import time
+
 
 logger.add('err.log', level="ERROR")
 
-THREAD_LIMIT = 2
+THREAD_LIMIT = 3
 
 
 class Worker(Thread):
@@ -69,7 +71,8 @@ class Worker(Thread):
         chrome_options.add_argument('--disable-web-security')  # 允许图片跨域加载
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-software-rasterizer')
-        chrome_options.add_experimental_option("excludeSwitches", ['enable-automation','enable-logging']) #防止打印一些无用的日志
+        chrome_options.add_experimental_option(
+            "excludeSwitches", ['enable-automation', 'enable-logging'])  # 防止打印一些无用的日志
         try:
             self.driver = webdriver.Chrome(service=Service(
                 ChromeDriverManager().install()), chrome_options=chrome_options)
@@ -130,6 +133,7 @@ class Task(Thread):
             for worker in self.pool:
                 if worker.is_alive() is not True:
                     self.pool.remove(worker)
+            time.sleep(1)
 
         for worker in self.pool:
             worker.unmount()

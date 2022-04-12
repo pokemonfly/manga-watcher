@@ -1,7 +1,6 @@
 import json
 import os
 import schedule
-from threading import Thread
 from flask import Flask, render_template, request, jsonify,  send_from_directory, make_response
 from werkzeug.routing import BaseConverter
 from loguru import logger
@@ -14,9 +13,9 @@ import datetime
 import re
 
 app = Flask(__name__)
-task = Task()
 timerCache = TimerCache()
-timingTask = TimingTask(app)
+task = Task()
+timingTask = TimingTask()
 logger.add('err.log', level="ERROR")
 
 
@@ -29,22 +28,29 @@ class RegexConverter(BaseConverter):
 app.url_map.converters['regex'] = RegexConverter
 
 
-@app.route('/image/<path:path>')
-def send_image_file(path):
-    return send_from_directory('cache', path, mimetype='image/png')
-
-
-@app.route('/<regex(".+\.html"):path>')
-def send_html_file(path):
+@app.route('/<regex(".+\.(html|png)"):path>')
+def send_cache_file(path):
     return send_from_directory('cache', path)
 
 
+@app.route('/<regex(".+\.(js|css|gif)"):path>')
+def send_static_file(path):
+    return send_from_directory('static', path)
+
+
 @app.route('/')
-def send_index_html_file():
-    return send_from_directory('cache', 'index.html')
+def index():
+    sitelist = [{
+        'name': SITE_CONFIG[site]['name'],
+        'url': SITE_CONFIG[site]['origin']
+    } for site in SITE_CONFIG if "search" in SITE_CONFIG[site]["action"]]
+    with DBHelper() as db:
+        readlist = db.query_comic()
+    return render_template(
+        'index.html', sitelist=sitelist, readlist=readlist)
 
 
-@ app.route('/search')
+@ app.route('/api/search')
 def search():
     keyword = request.args.get('keyword')
     origin = request.args.get('origin')
@@ -64,7 +70,7 @@ def search():
     return render_template('search.html', data=json.dumps(res, ensure_ascii=False))
 
 
-@ app.route('/comic_preview')
+@ app.route('/api/comic_preview')
 def preview():
     url = request.args.get('url')
     origin = re.findall(r'^https?://[^/]+', url)[0]
@@ -84,34 +90,21 @@ def preview():
     return render_template('preview.html', data=json.dumps(res, ensure_ascii=False))
 
 
-@app.route('/fix')
-def fix():
-    with DBHelper() as db:
-        readlist = db.query_comic()
-        for i in readlist:
-            timingTask.create_comic_html(i['id'])
-            chapterlist = db.query_chapter_by_id(i['id'])
-            for j in chapterlist:
-                if j['sync_state'] == 2:
-                    timingTask.create_chapter_html(j['id'], i['id'])
-    return jsonify({'msg': 'ok', 'result': True})
+# @ app.route('/bookmark')
+# def bookmark():
+#     chapter_id = request.args.get('chapter_id')
+#     with DBHelper() as db:
+#         db.update_by_id('chapter', chapter_id,
+#                         last_access=datetime.datetime.now())
+
+#     def sync():
+#         timingTask.create_index_html()
+#         return schedule.CancelJob
+#     schedule.every(60).seconds.do(sync)
+#     return jsonify({'msg': 'ok', 'result': True})
 
 
-@ app.route('/bookmark')
-def bookmark():
-    chapter_id = request.args.get('chapter_id')
-    with DBHelper() as db:
-        db.update_by_id('chapter', chapter_id,
-                        last_access=datetime.datetime.now())
-
-    def sync():
-        timingTask.create_index_html()
-        return schedule.CancelJob
-    schedule.every(60).seconds.do(sync)
-    return jsonify({'msg': 'ok', 'result': True})
-
-
-@ app.route('/sync_now')
+@ app.route('/api/sync_now')
 def sync_now():
     def sync():
         timingTask.sync_chapter()
@@ -120,7 +113,7 @@ def sync_now():
     return jsonify({'msg': 'ok', 'result': True})
 
 
-@ app.route('/subscribe', methods=['POST'])
+@ app.route('/api/subscribe', methods=['POST'])
 def subscribe():
     formdata = request.form
     comic = timerCache.get(formdata.get('url'))
@@ -154,12 +147,14 @@ def subscribe():
         if len(subscribe_list) > 0:
             db.sync_task_by_chapter_id(comic_id)
 
+        timingTask.create_index_html()
+        timingTask.create_comic_html(comic_id)
     sync_now()
 
     return jsonify({'msg': 'ok', 'result': True})
 
 
-@ app.route('/subscribe_chapters', methods=['POST'])
+@ app.route('/api/subscribe_chapters', methods=['POST'])
 def subscribe_chapters():
     formdata = request.form
     subscribe_list_str = formdata.get('subscribe_list')
@@ -171,7 +166,7 @@ def subscribe_chapters():
     return jsonify({'msg': 'ok', 'result': True})
 
 
-@ app.route('/unsubscribe', methods=['POST'])
+@ app.route('/api/unsubscribe', methods=['POST'])
 def unsubscribe():
     formdata = request.form
     id = formdata.get('id')
@@ -185,5 +180,20 @@ def unsubscribe():
     return jsonify({'msg': 'ok', 'result': True})
 
 
+@ app.route('/api/freshHtml')
+def freshHtml():
+    timingTask.create_index_html()
+    with DBHelper() as db:
+        comic_list = db.query_comic()
+        for comic in comic_list:
+            timingTask.create_comic_html(comic['id'])
+            chapter_list = db.query_chapter_by_id(comic['id'])
+            for chapter in chapter_list:
+                if chapter['sync_state'] == 2:
+                    timingTask.create_chapter_html(chapter['id'])
+
+    return jsonify({'msg': 'ok', 'result': True})
+
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', debug=False, use_reloader=False)

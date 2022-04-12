@@ -39,6 +39,9 @@ button {
   background: #498ff2;
   border: 1px solid transparent;
 }
+button + button {
+  margin-left: 10px;
+}
 
 input, select {
   padding: 0 8px;

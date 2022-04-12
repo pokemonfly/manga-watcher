@@ -8,8 +8,8 @@
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no,email=no,adress=no" />
-    <script src={{ url_for("static", filename="js/jquery.min.js") }}></script>
-    <link type="text/css" rel="stylesheet" href={{ url_for("static", filename="style.css") }}></link>
+    <script src="/js/jquery.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="/style.css"></link>
     <title>{% block title %} {% endblock %}</title>
   </head>
   <body>
@@ -23,7 +23,7 @@
         window.injectData = null;
       }
     </script>
-    <script src={{ url_for("static", filename="js/base.js") }}></script>
+    <script src="/js/base.js"></script>
     {% block content %} 
     {% endblock %}
   </body>

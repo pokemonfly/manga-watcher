@@ -9,25 +9,32 @@ from task import Task
 from utils import SITE_CONFIG, save_file
 import shutil
 from datetime import datetime
+import jinja2
+import time
 
 logger.add('err.log', level="ERROR")
 
 
+def render_template(template, ** context):
+    return jinja2.Environment(loader=jinja2.FileSystemLoader(
+        'templates/')).get_template(template).render(context)
+
+
 class TimingTask(Thread):
-    def __init__(self, flask_app):
+    def __init__(self):
         super().__init__(daemon=True)
-        self.app = flask_app
         self.sync_comic_lock = Lock()
         self.sync_chapter_lock = Lock()
         self.last_sync_time = None
         self.start()
         schedule.every(6).hours.do(self.sync_comic)
-        schedule.every(7).days.do(self.del_old_file)
+        # schedule.every(7).days.do(self.del_old_file)
         self.create_index_html()
 
     def run(self):
         while True:
             schedule.run_pending()
+            time.sleep(1)
 
     def del_old_file(self):
         with DBHelper() as db:
@@ -135,8 +142,9 @@ class TimingTask(Thread):
                 sync_state=2
             )
             db.delete_by_id('task', info['task_id'])
+        self.create_index_html()
         self.create_comic_html(info['comic_id'])
-        self.create_chapter_html(info['chapter_id'], info['comic_id'])
+        self.create_chapter_html(info['chapter_row_id'])
 
     def create_index_html(self):
         if self.last_sync_time is None:
@@ -149,9 +157,8 @@ class TimingTask(Thread):
         } for site in SITE_CONFIG if "search" in SITE_CONFIG[site]["action"]]
         with DBHelper() as db:
             readlist = db.query_comic()
-        with self.app.app_context(), self.app.test_request_context():
-            str = render_template(
-                'index.html', sitelist=sitelist, readlist=readlist)
+        str = render_template(
+            'index.html', sitelist=sitelist, readlist=readlist)
         with open('cache/index.html', 'w') as f:
             f.write(str)
         return schedule.CancelJob
@@ -161,18 +168,16 @@ class TimingTask(Thread):
             comic = db.query_by_id('comic', id)[0]
             chapterlist = db.query_chapter_by_id(id)
 
-        with self.app.app_context(), self.app.test_request_context():
-            str = render_template('comic.html',
-                                  comic=comic,
-                                  chapterlist=chapterlist)
+        str = render_template('comic.html',
+                              comic=comic,
+                              chapterlist=chapterlist)
         with open(f'cache/{id}.html', 'w') as f:
             f.write(str)
 
-    def create_chapter_html(self, id, comic_id):
+    def create_chapter_html(self, id):
         with DBHelper() as db:
             chapter = db.query_by_id('chapter', id)[0]
 
-        with self.app.app_context(), self.app.test_request_context():
-            str = render_template('chapter.html', chapter=chapter)
-        with open(f'cache/{comic_id}/{id}.html', 'w') as f:
+        str = render_template('chapter.html', chapter=chapter)
+        with open(f"cache/{chapter['comic_id']}/{chapter['chapter_id']}.html", 'w') as f:
             f.write(str)

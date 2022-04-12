@@ -7,12 +7,5 @@ $(function () {
 
   setTimeout(() => {
     $(".image-item").eq(0).click();
-    $.ajax({
-      url: "/bookmark",
-      data: {
-        chapter_id: $("#chapter_id").val(),
-        comic_id: $("#comic_id").val(),
-      },
-    });
   }, 500);
 });

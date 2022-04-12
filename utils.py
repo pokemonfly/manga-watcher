@@ -2,7 +2,6 @@ import os
 import random
 import string
 from threading import Timer
-from time import sleep
 import yaml
 import base64
 from threading import Lock
