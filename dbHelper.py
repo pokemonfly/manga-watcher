@@ -198,7 +198,6 @@ if __name__ == "__main__":
     sql = """
         alter table comic
         add last_sync datetime
-        drop COLUMN uid
     """
     c = db.conn.cursor()
     c.execute(sql)

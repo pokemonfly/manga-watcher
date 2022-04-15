@@ -211,7 +211,7 @@ if __name__ == "__main__":
     else:
         # 如果存在证书 就开启https
         ssl_context = None
-        if os.path.exists('cert.pem') and os.path.exists('key.pem'):
-            ssl_context = ("cert.pem", "key.pem")
+        if os.path.exists('cert/cert.pem') and os.path.exists('cert/key.pem'):
+            ssl_context = ("cert/cert.pem", "cert/key.pem")
         app.run(host='0.0.0.0', debug=False,
                 use_reloader=False, ssl_context=ssl_context)

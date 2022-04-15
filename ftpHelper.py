@@ -12,6 +12,7 @@ class FtpHelper():
     def __init__(self):
         self.ftp = FTP(cfg['address'], cfg['username'], cfg['password'])
         logger.info(f'FTP connect')
+        self.ftp.cwd('sda1/ftp')
 
     def __enter__(self):
         return self
@@ -63,10 +64,10 @@ class FtpHelper():
 
 if __name__ == "__main__":
     with FtpHelper() as ftp:
-        # ftp.upload('static')
+        ftp.upload('static')
         # ftp.upload('cache2', auto_remove=True)
         # ftp.upload('nginx.conf')
 
         # ftp.upload(f'static/access.log')
-        print('\n'.join(ftp.read_log()))
+        # print('\n'.join(ftp.read_log()))
         pass
