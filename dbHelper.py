@@ -191,3 +191,15 @@ class DBHelper():
         cursor = self.conn.cursor()
         cursor.execute(sql)
         return cursor.fetchall()
+
+
+if __name__ == "__main__":
+    db = DBHelper()
+    sql = """
+        alter table comic
+        add last_sync datetime
+        drop COLUMN uid
+    """
+    c = db.conn.cursor()
+    c.execute(sql)
+    print(c.fetchall())

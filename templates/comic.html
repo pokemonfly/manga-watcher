@@ -17,14 +17,7 @@
     data-id="{{chapter['chapter_id']}}" 
     data-state="{{chapter['sync_state']}}" 
     data-url="{{comic['id']}}/{{chapter['chapter_id']}}.html">
-    {{chapter['chapter_title']}}
-    {% if chapter['sync_state'] == 1 %}
-      [下载中]
-    {% elif chapter['sync_state'] == 2 %}
-      [{{chapter['page_count']}}页]
-    {% elif chapter['sync_state'] == 3 %}
-      [已删除]
-    {% endif %}
+    {{chapter['chapter_title']}}{% if chapter['sync_state'] == 1 %}[下载中]{% elif chapter['sync_state'] == 2 %}[{{chapter['page_count']}}页]{% elif chapter['sync_state'] == 3 %}[已删除]{% endif %}
   </div>
   {% endfor %}
 </div>

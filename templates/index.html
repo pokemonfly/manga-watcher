@@ -13,7 +13,7 @@
   </form>
 </div>
 <div class="index-form">
-  <form action="/search" method="get">
+  <form action="/api/search" method="get">
     <fieldset>
       <legend>检索</legend>
       <div class="row">
@@ -44,9 +44,7 @@
     <img src="cover/{{item['id']}}.png" />
     <div>
       <div class="title">
-        {{item['title']}} {% if item['unread'] > 0 %}
-        <span>[未读: {{item['unread']}}]</span>
-        {% endif %}
+        {{item['title']}}{% if item['unread'] > 0 %}<span>[未读: {{item['unread']}}]</span>{% endif %}
       </div>
       <div class="sub author">{{item['author']}}</div>
       <div class="sub last_update">{{item['last_update']}}</div>

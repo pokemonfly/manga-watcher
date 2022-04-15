@@ -15,3 +15,8 @@ window.comic_init = () => {};
 window.comic_result = () => {};
 window.chapter_init = () => {};
 window.chapter_result = () => {};
+
+
+# todo 
+auth-basic
+https://blog.csdn.net/DavidWed/article/details/91881287

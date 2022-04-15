@@ -2,8 +2,9 @@ from ftplib import FTP, error_perm
 import yaml
 from loguru import logger
 import os
-
-with open('config/ftp.yaml', 'rb') as file:
+import re
+import io
+with open('config/cfg.yaml', 'rb') as file:
     cfg = yaml.safe_load(file)
 
 
@@ -19,35 +20,53 @@ class FtpHelper():
         self.ftp.close()
         logger.info(f'FTP connect close')
 
-    def upload(self, path):
-        files = os.listdir(path)
-        os.chdir(path)
-        for f in files:
-            if os.path.isfile(f):
-                with open(f, 'rb') as file:
-                    self.ftp.storbinary(f'STOR {f}', file)
-                    logger.info(f'Upload File: {f}')
-            elif os.path.isdir(f):
-                try:
-                    self.ftp.mkd(f)
-                except error_perm as e:
-                    if not e.args[0].startswith('550'):
-                        raise
+    def upload(self, path, auto_remove=False):
+        if os.path.isfile(path):
+            with open(path, 'rb') as file:
+                p = re.sub(".*\/", "", path)
+                self.ftp.storbinary(f'STOR {p}', file)
+                logger.info(f'Upload File: {path}')
+            if auto_remove:
+                os.remove(path)
+        elif os.path.isdir(path):
+            files = os.listdir(path)
+            os.chdir(path)
+            for f in files:
+                if os.path.isdir(f):
+                    try:
+                        self.ftp.mkd(f)
+                    except error_perm as e:
+                        if not e.args[0].startswith('550'):
+                            raise
+                    self.ftp.cwd(f)
+                self.upload(f, auto_remove)
+            self.ftp.cwd('..')
+            os.chdir('..')
+            if auto_remove:
+                os.rmdir(path)
 
-                self.ftp.cwd(f)
-                self.upload(f)
-        self.ftp.cwd('..')
-        os.chdir('..')
-
-    def read_log(self, path):
-        def analyze(line):
-            logger.info(line)
-        self.ftp.retrlines(f'RETR {path}', analyze)
+    def read_log(self):
+        str_io = io.StringIO()
+        self.ftp.retrlines(f'RETR access.log', lambda s: print(s, file=str_io))
+        lines = str_io.getvalue().strip().split('\n')
+        if lines[0] == cfg['access_log_first_row']:
+            new_lines = lines[cfg['access_log_cursor']:]
+        else:
+            new_lines = lines
+        str_io.close()
+        with open('config/cfg.yaml', 'w') as file:
+            cfg['access_log_cursor'] = len(lines)
+            cfg['access_log_first_row'] = lines[0]
+            file.write(yaml.safe_dump(cfg))
+        return new_lines
 
 
 if __name__ == "__main__":
     with FtpHelper() as ftp:
-        ftp.upload('static')
-        ftp.upload('cache')
-        # ftp.read_log('5.html')
+        # ftp.upload('static')
+        # ftp.upload('cache2', auto_remove=True)
+        # ftp.upload('nginx.conf')
+
+        # ftp.upload(f'static/access.log')
+        print('\n'.join(ftp.read_log()))
         pass

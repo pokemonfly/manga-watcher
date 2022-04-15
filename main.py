@@ -11,12 +11,19 @@ from utils import TimerCache,  save_file, SITE_CONFIG
 import shutil
 import datetime
 import re
+import sys
 
 app = Flask(__name__)
 timerCache = TimerCache()
-task = Task()
+task = None
 timingTask = TimingTask()
 logger.add('err.log', level="ERROR")
+
+
+def get_task():
+    if task is None:
+        task = Task()
+    return task
 
 
 class RegexConverter(BaseConverter):
@@ -60,7 +67,7 @@ def search():
     if res is None:
         cfg = SITE_CONFIG[origin]['action']['search']
         url = cfg['url'].format(keyword=keyword, page_num=page_num)
-        task.set_task([{
+        get_task().set_task([{
             "url": url,
             "js_init": cfg['js_init'].format(page_num=page_num),
             "js_result": cfg['js_result'].format(page_num=page_num)
@@ -79,7 +86,7 @@ def preview():
     cfg = SITE_CONFIG[origin]['action']['comic']
     res = timerCache.get(url)
     if res is None:
-        task.set_task([{
+        get_task().set_task([{
             'type': "preview",
             "url": url,
             "js_init": cfg['js_init'],
@@ -128,7 +135,8 @@ def subscribe():
             page_url=comic['page_url'],
             origin=comic['origin'],
             last_update=comic['last_update'],
-            ignore_index=ignore_index
+            ignore_index=ignore_index,
+            last_sync=datetime.datetime.now()
         )
         save_file(f'cover/{comic_id}.png', comic['cover'])
         subscribe_list_str = formdata.get('subscribe_list')
@@ -196,4 +204,14 @@ def freshHtml():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=False, use_reloader=False)
+    args = sys.argv
+    if len(args) > 1 and args[1] == 'daily':
+        timingTask.daily_task()
+        timingTask.join()
+    else:
+        # 如果存在证书 就开启https
+        ssl_context = None
+        if os.path.exists('cert.pem') and os.path.exists('key.pem'):
+            ssl_context = ("cert.pem", "key.pem")
+        app.run(host='0.0.0.0', debug=False,
+                use_reloader=False, ssl_context=ssl_context)

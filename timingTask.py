@@ -1,10 +1,12 @@
 from functools import partial
+import os
 import re
 from flask import render_template
 from loguru import logger
 import schedule
 from threading import Thread, Lock
 from dbHelper import DBHelper
+from ftpHelper import FtpHelper
 from task import Task
 from utils import SITE_CONFIG, save_file
 import shutil
@@ -26,13 +28,15 @@ class TimingTask(Thread):
         self.sync_comic_lock = Lock()
         self.sync_chapter_lock = Lock()
         self.last_sync_time = None
+        self.ref = 0
+        self.is_run = True
+        self.html_set = set()
         self.start()
-        schedule.every(6).hours.do(self.sync_comic)
+        # schedule.every(6).hours.do(self.sync_comic)
         # schedule.every(7).days.do(self.del_old_file)
-        self.create_index_html()
 
     def run(self):
-        while True:
+        while self.is_run:
             schedule.run_pending()
             time.sleep(1)
 
@@ -55,6 +59,8 @@ class TimingTask(Thread):
             task = Task()
             task_list = []
             for comic in comic_list:
+                if comic['last_sync'] is not None and (datetime.now() - datetime.fromisoformat(comic['last_sync'])) .total_seconds() < 60 * 60 * 24:
+                    continue
                 url = comic['page_url']
                 origin = re.findall(r'^https?://[^/]+', url)[0]
                 task_list.append({
@@ -63,7 +69,7 @@ class TimingTask(Thread):
                     "js_result": SITE_CONFIG[origin]['action']['comic']['js_result'],
                     "callback":  partial(self.sync_comic_callback, comic)
                 })
-
+            self.ref += len(task_list)
             task.set_task(task_list, auto_close=True)
 
     def sync_comic_callback(self, info, comic, error=None):
@@ -73,6 +79,7 @@ class TimingTask(Thread):
                 logger.error(
                     f"[{info['title']}] 同步发生错误 {error}")
                 db.upd_task_error(1, id, error)
+                self.ref -= 1
                 return
             ignore_index = info['ignore_index']
             chapter_list = db.query_chapter_by_id(id)
@@ -86,6 +93,7 @@ class TimingTask(Thread):
                 if len(err_list := [i for i in diff_list if i[0] in old_id_list]) > 0:
                     logger.info(
                         f"[{info['title']}] 章节顺序 {str(err_list)} 发生变化, 需要手动处理")
+                    self.ref -= 1
                     return
                 logger.info(f"[{info['title']}] 发现更新 {diff_len} 章")
                 diff_id_list = [i[0] for i in diff_list]
@@ -99,12 +107,18 @@ class TimingTask(Thread):
                 db.sync_task_by_chapter_id(id)
                 db.update_by_id(
                     'comic', id,
-                    last_update=comic['last_update']
+                    last_update=comic['last_update'],
+                    last_sync=datetime.now()
                 )
-                self.create_comic_html(id)
+                self.html_set.add((1, id))
                 self.sync_chapter()
             else:
+                db.update_by_id(
+                    'comic', id,
+                    last_sync=datetime.now()
+                )
                 logger.info(f"[{comic['title']}] 无更新")
+        self.ref -= 1
 
     def sync_chapter(self):
         with self.sync_chapter_lock, DBHelper() as db:
@@ -122,7 +136,7 @@ class TimingTask(Thread):
                     "js_result": SITE_CONFIG[origin]['action']['chapter']['js_result'],
                     "callback":  partial(self.sync_chapter_callback, item)
                 })
-
+            self.ref += len(task_list)
             task.set_task(task_list, auto_close=True)
 
     def sync_chapter_callback(self, info, chapter, error=None):
@@ -131,6 +145,7 @@ class TimingTask(Thread):
                 logger.error(
                     f"[{info['comic_title']}][{info['chapter_title']}] 发生错误 {error}")
                 db.upd_task_error(2, info['task_id'], error)
+                self.ref -= 1
                 return
             page_count = len(chapter)
             for c in chapter:
@@ -142,9 +157,9 @@ class TimingTask(Thread):
                 sync_state=2
             )
             db.delete_by_id('task', info['task_id'])
-        self.create_index_html()
-        self.create_comic_html(info['comic_id'])
-        self.create_chapter_html(info['chapter_row_id'])
+        self.html_set.add((1, info['comic_id']))
+        self.html_set.add((2, info['chapter_row_id']))
+        self.ref -= 1
 
     def create_index_html(self):
         if self.last_sync_time is None:
@@ -159,6 +174,7 @@ class TimingTask(Thread):
             readlist = db.query_comic()
         str = render_template(
             'index.html', sitelist=sitelist, readlist=readlist)
+        os.makedirs(os.path.dirname('cache/index.html'), exist_ok=True)
         with open('cache/index.html', 'w') as f:
             f.write(str)
         return schedule.CancelJob
@@ -181,3 +197,39 @@ class TimingTask(Thread):
         str = render_template('chapter.html', chapter=chapter)
         with open(f"cache/{chapter['comic_id']}/{chapter['chapter_id']}.html", 'w') as f:
             f.write(str)
+
+    def daily_task(self):
+        logger.info('更新任务开始')
+        with FtpHelper() as ftp:
+            ftp.read_log(self.sync_access_log)
+        # self.sync_comic()
+        # schedule.every(1).seconds.do(self.daily_task_watch)
+
+    def daily_task_watch(self):
+        if self.ref == 0:
+            logger.info('更新任务完成')
+            logger.info('生成新缓存文件')
+            self.create_index_html()
+            if len(self.html_set) > 0:
+                for i in self.html_set:
+                    if i[0] == 1:
+                        self.create_comic_html(i[1])
+                    else:
+                        self.create_chapter_html(i[1])
+            logger.info('开始同步远程')
+            try:
+                with FtpHelper() as ftp:
+                    ftp.upload('cache', auto_remove=True)
+            except:
+                logger.error('同步出错')
+            self.is_run = False
+            logger.info('任务完成')
+
+    def sync_access_log(self, line):
+        res = re.findall(r'\[(.*?)\].*log\.gif\?id=(\d+)', line)
+        print(res)
+
+if __name__ == "__main__":
+    tt = TimingTask()
+    tt.daily_task()
+    tt.join()
