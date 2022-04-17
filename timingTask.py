@@ -187,6 +187,7 @@ class TimingTask(Thread):
         str = render_template('comic.html',
                               comic=comic,
                               chapterlist=chapterlist)
+        os.makedirs(os.path.dirname(f'cache/{id}.html'), exist_ok=True)
         with open(f'cache/{id}.html', 'w') as f:
             f.write(str)
 
@@ -195,20 +196,21 @@ class TimingTask(Thread):
             chapter = db.query_by_id('chapter', id)[0]
 
         str = render_template('chapter.html', chapter=chapter)
+        os.makedirs(os.path.dirname(f"cache/{chapter['comic_id']}/{chapter['chapter_id']}.html"), exist_ok=True)
         with open(f"cache/{chapter['comic_id']}/{chapter['chapter_id']}.html", 'w') as f:
             f.write(str)
 
     def daily_task(self):
-        logger.info('更新任务开始')
-        with FtpHelper() as ftp:
-            ftp.read_log(self.sync_access_log)
-        # self.sync_comic()
-        # schedule.every(1).seconds.do(self.daily_task_watch)
+        logger.info('Start daily task')
+        # with FtpHelper() as ftp:
+        #     ftp.read_log(self.sync_access_log)
+        self.sync_comic()
+        schedule.every(1).seconds.do(self.daily_task_watch)
 
     def daily_task_watch(self):
         if self.ref == 0:
-            logger.info('更新任务完成')
-            logger.info('生成新缓存文件')
+            logger.info('Daily task finished')
+            logger.info('Create Cache File')
             self.create_index_html()
             if len(self.html_set) > 0:
                 for i in self.html_set:
@@ -216,18 +218,19 @@ class TimingTask(Thread):
                         self.create_comic_html(i[1])
                     else:
                         self.create_chapter_html(i[1])
-            logger.info('开始同步远程')
+            logger.info('Sync Ftp Server')
             try:
                 with FtpHelper() as ftp:
                     ftp.upload('cache', auto_remove=True)
             except:
-                logger.error('同步出错')
+                logger.error('Sync Error')
             self.is_run = False
-            logger.info('任务完成')
+            logger.info('Down')
 
     def sync_access_log(self, line):
         res = re.findall(r'\[(.*?)\].*log\.gif\?id=(\d+)', line)
         print(res)
+
 
 if __name__ == "__main__":
     tt = TimingTask()

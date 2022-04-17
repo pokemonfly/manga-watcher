@@ -40,7 +40,7 @@ class Worker(Thread):
             self.driver.execute_script(INJECT_CONFIG[origin])
 
             if 'js_init' in task:
-                WebDriverWait(self.driver, 500, poll_frequency=3).until(
+                WebDriverWait(self.driver, 600, poll_frequency=3).until(
                     lambda _: self.driver.execute_script(task['js_init']))
             res = self.driver.execute_script(task['js_result'])
             if "callback" in task:

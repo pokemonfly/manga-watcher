@@ -36,7 +36,6 @@ with open('config/site.yaml', 'rb') as file:
         SITE_CONFIG[site['origin']] = site
         with open(f"config/{site['inject']}", "r") as jsFile:
             INJECT_CONFIG[site['origin']] = jsFile.read()
-    
 
 
 def save_file(path, img_string):

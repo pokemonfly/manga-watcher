@@ -5,3 +5,5 @@ data.db
 err.log
 test.py
 *.pem
+.gitignore
+config/cfg.yaml
