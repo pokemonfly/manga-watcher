@@ -21,6 +21,16 @@ class FtpHelper():
         self.ftp.close()
         logger.info(f'FTP connect close')
 
+    def remove(self, path):
+        if '.' in path:
+            self.ftp.delete(path)
+            logger.info(f'Delete File: {path}')
+        else:
+            for p in self.ftp.nlst(path):
+                self.remove(p)
+            self.ftp.rmd(path)
+            logger.info(f'Delete Dictionary: {path}')
+
     def upload(self, path, auto_remove=False):
         if os.path.isfile(path):
             with open(path, 'rb') as file:

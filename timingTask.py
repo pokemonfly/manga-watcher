@@ -144,7 +144,7 @@ class TimingTask(Thread):
             if error is not None:
                 logger.error(
                     f"[{info['comic_title']}][{info['chapter_title']}] 发生错误 {error}")
-                db.upd_task_error(2, info['task_id'], error)
+                # db.upd_task_error(2, info['task_id'], error)
                 self.ref -= 1
                 return
             page_count = len(chapter)

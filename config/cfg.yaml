@@ -1,5 +1,5 @@
-access_log_cursor: 0
-access_log_first_row: ''
+access_log_cursor: 7
+access_log_first_row: '[2022-04-16T00:00:34+08:00][192.168.50.2][/log.gif?id=1]'
 address: 192.168.50.1
+password: wifi211090
 username: admin
-password: 

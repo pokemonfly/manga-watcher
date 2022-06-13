@@ -5,25 +5,25 @@ from flask import Flask, render_template, request, jsonify,  send_from_directory
 from werkzeug.routing import BaseConverter
 from loguru import logger
 from dbHelper import DBHelper
+from ftpHelper import FtpHelper
 from task import Task
 from timingTask import TimingTask
 from utils import TimerCache,  save_file, SITE_CONFIG
-import shutil
-import datetime
+from datetime import datetime
 import re
 import sys
 
 app = Flask(__name__)
 timerCache = TimerCache()
-task = None
+task = Task()
 timingTask = TimingTask()
 logger.add('err.log', level="ERROR")
 
 
-def get_task():
-    if task is None:
-        task = Task()
-    return task
+# def get_task():
+#     if task is None:
+#         task = Task()
+#     return task
 
 
 class RegexConverter(BaseConverter):
@@ -67,7 +67,7 @@ def search():
     if res is None:
         cfg = SITE_CONFIG[origin]['action']['search']
         url = cfg['url'].format(keyword=keyword, page_num=page_num)
-        get_task().set_task([{
+        task.set_task([{
             "url": url,
             "js_init": cfg['js_init'].format(page_num=page_num),
             "js_result": cfg['js_result'].format(page_num=page_num)
@@ -86,7 +86,7 @@ def preview():
     cfg = SITE_CONFIG[origin]['action']['comic']
     res = timerCache.get(url)
     if res is None:
-        get_task().set_task([{
+        task.set_task([{
             'type': "preview",
             "url": url,
             "js_init": cfg['js_init'],
@@ -135,8 +135,7 @@ def subscribe():
             page_url=comic['page_url'],
             origin=comic['origin'],
             last_update=comic['last_update'],
-            ignore_index=ignore_index,
-            last_sync=datetime.datetime.now()
+            ignore_index=ignore_index
         )
         save_file(f'cover/{comic_id}.png', comic['cover'])
         subscribe_list_str = formdata.get('subscribe_list')
@@ -180,10 +179,10 @@ def unsubscribe():
     id = formdata.get('id')
     with DBHelper() as db:
         db.unsubscribe(id)
-    cover_file = f"cache/cover/{id}.png"
-    if os.path.exists(cover_file):
-        os.remove(cover_file)
-    shutil.rmtree(f'cache/{id}', ignore_errors=True)
+    with FtpHelper() as ftp:
+        ftp.remove(f"cover/{id}.png")
+        ftp.remove(f"{id}.html")
+        ftp.remove(f'{id}')
 
     return jsonify({'msg': 'ok', 'result': True})
 
@@ -199,7 +198,8 @@ def freshHtml():
             for chapter in chapter_list:
                 if chapter['sync_state'] == 2:
                     timingTask.create_chapter_html(chapter['id'])
-
+    with FtpHelper() as ftp:
+        ftp.upload('cache', auto_remove=True)
     return jsonify({'msg': 'ok', 'result': True})
 
 
