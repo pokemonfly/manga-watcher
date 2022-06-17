@@ -196,14 +196,15 @@ class TimingTask(Thread):
             chapter = db.query_by_id('chapter', id)[0]
 
         str = render_template('chapter.html', chapter=chapter)
-        os.makedirs(os.path.dirname(f"cache/{chapter['comic_id']}/{chapter['chapter_id']}.html"), exist_ok=True)
+        os.makedirs(os.path.dirname(
+            f"cache/{chapter['comic_id']}/{chapter['chapter_id']}.html"), exist_ok=True)
         with open(f"cache/{chapter['comic_id']}/{chapter['chapter_id']}.html", 'w') as f:
             f.write(str)
 
     def daily_task(self):
         logger.info('Start daily task')
-        # with FtpHelper() as ftp:
-        #     ftp.read_log(self.sync_access_log)
+        with FtpHelper() as ftp:
+            ftp.read_log(self.sync_access_log)
         self.sync_comic()
         schedule.every(1).seconds.do(self.daily_task_watch)
 
@@ -227,12 +228,22 @@ class TimingTask(Thread):
             self.is_run = False
             logger.info('Down')
 
-    def sync_access_log(self, line):
-        res = re.findall(r'\[(.*?)\].*log\.gif\?id=(\d+)', line)
-        print(res)
+    def sync_access_log(self, lines):
+        list = []
+        for row in lines:
+            res = re.findall(r'\[(.*?)\].*log\.js\?id=(\d+)', row)
+            if len(res) > 0:
+                list.append(res[0])
+        with DBHelper() as db:
+            for (date, id) in list:
+                db.update_by_id(
+                    'chapter', id, last_access=datetime.fromisoformat(date))
 
 
 if __name__ == "__main__":
     tt = TimingTask()
-    tt.daily_task()
-    tt.join()
+    # tt.daily_task()
+    # tt.join()
+    with open('./access.log', 'r') as f:
+        arr = f.readlines()
+    tt.sync_access_log(arr)
